@@ -1,0 +1,129 @@
+rules_version = '2';
+
+// Правила бази для аукціону. Вставте цей файл у Firebase Console → Firestore → Rules.
+// Сервер Firebase перевіряє кожну ставку сам, тому підробити її з браузера не вийде.
+//
+// ⚠️ Замініть пошту нижче на пошту адміністратора (та сама, що в config.js → adminEmails).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && request.auth.token.email in ['admin@example.com'];
+    }
+
+    // Пауза між ставками одного учасника, секунди (має збігатися з config.js → bidCooldownSec)
+    function cooldown() { return duration.value(10, 's'); }
+
+    function bidderPath(uid) { return /databases/$(database)/documents/bidders/$(uid); }
+    function lotPath(lotId) { return /databases/$(database)/documents/lots/$(lotId); }
+    function bidPath(lotId, seq) { return /databases/$(database)/documents/lots/$(lotId)/bids/$(string(seq)); }
+
+    // ---------- Учасники: ім'я та телефон бачать лише сам учасник і адміністратор ----------
+    function validProfile(d) {
+      return d.name is string && d.name.size() >= 2 && d.name.size() <= 60
+        && d.phone is string && d.phone.matches('^\\+[0-9]{10,15}$')
+        && d.phoneTail is string && d.phoneTail.matches('^[0-9]{2}$')
+        && d.phone.matches('^.*' + d.phoneTail + '$');
+    }
+
+    match /bidders/{uid} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'phoneTail', 'createdAt', 'lastBidAt'])
+        && request.resource.data.keys().hasAll(['name', 'phone', 'phoneTail', 'createdAt', 'lastBidAt'])
+        && validProfile(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.lastBidAt == null;
+
+      allow update: if isAdmin() || (
+        request.auth != null && request.auth.uid == uid
+        && resource.data.get('blocked', false) == false
+        && (
+          // Змінити ім'я/телефон можна лише до першої ставки
+          (resource.data.lastBidAt == null
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'phoneTail'])
+            && validProfile(request.resource.data))
+          ||
+          // Позначка часу ставки: не частіше, ніж раз на cooldown()
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastBidAt'])
+            && request.resource.data.lastBidAt == request.time
+            && (resource.data.lastBidAt == null || request.time > resource.data.lastBidAt + cooldown()))
+        )
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Лоти ----------
+    match /lots/{lotId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || validBid(lotId);
+
+      function validBid(lotId) {
+        let o = resource.data;
+        let n = request.resource.data;
+        let uid = request.auth.uid;
+        let me = getAfter(bidderPath(uid)).data;
+        let bid = getAfter(bidPath(lotId, n.bidCount)).data;
+        let base = o.get('leaderUid', null) == null ? o.startPrice : o.currentPrice;
+        let minPrice = o.get('leaderUid', null) == null ? o.startPrice : o.currentPrice + o.minStep;
+        let snipe = duration.value(o.get('antiSnipeSec', 0), 's');
+        return request.auth != null
+          && o.get('hidden', false) == false
+          && request.time < o.endsAt
+          && n.diff(o).affectedKeys().hasOnly(['currentPrice', 'bidCount', 'leaderUid', 'leaderName', 'leaderPhoneTail', 'lastBidAt', 'endsAt'])
+          // Ставка — наступна за номером
+          && n.bidCount == o.bidCount + 1
+          // Ціна: не менше мінімального кроку і не більше максимального підвищення за раз
+          && n.currentPrice is int
+          && n.currentPrice >= minPrice
+          && n.currentPrice <= base + o.maxStep
+          // Не можна перебивати власну ставку
+          && o.get('leaderUid', null) != uid
+          && n.leaderUid == uid
+          && n.leaderName == me.name
+          && n.leaderPhoneTail == me.phoneTail
+          && n.lastBidAt == request.time
+          // Учасник зареєстрований, не заблокований і витримав паузу між ставками
+          && me.get('blocked', false) == false
+          && me.lastBidAt == request.time
+          // Запис ставки створено в тій самій транзакції
+          && bid.uid == uid
+          && bid.amount == n.currentPrice
+          // Анти-снайпінг: ставка в останні хвилини подовжує лот
+          && (n.endsAt == o.endsAt
+              || (o.endsAt < request.time + snipe + duration.value(30, 's')
+                  && n.endsAt > o.endsAt
+                  && n.endsAt <= request.time + snipe + duration.value(60, 's')));
+      }
+
+      // ---------- Історія ставок: видно всім, змінювати може лише адміністратор ----------
+      match /bids/{seq} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'phoneTail', 'amount', 'createdAt', 'cancelled'])
+          && request.resource.data.keys().hasAll(['uid', 'name', 'phoneTail', 'amount', 'createdAt', 'cancelled'])
+          && request.resource.data.uid == request.auth.uid
+          && getAfter(lotPath(lotId)).data.bidCount == int(seq)
+          && getAfter(lotPath(lotId)).data.leaderUid == request.auth.uid
+          && request.resource.data.amount == getAfter(lotPath(lotId)).data.currentPrice
+          && request.resource.data.name == getAfter(bidderPath(request.auth.uid)).data.name
+          && request.resource.data.phoneTail == getAfter(bidderPath(request.auth.uid)).data.phoneTail
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.cancelled == false;
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // ---------- Фото лотів (окремо, щоб не завантажувати їх при кожній ставці) ----------
+    match /lotMedia/{lotId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Керування аукціоном</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <a class="brand" href="./"><span class="brand-dot"></span>Сторінка аукціону</a>
+    <h1>Керування аукціоном</h1>
+  </header>
+
+  <div id="notice" class="notice" hidden></div>
+
+  <!-- Вхід -->
+  <section id="loginView" hidden>
+    <form class="box" id="loginForm" style="max-width:420px">
+      <h2>Вхід для адміністратора</h2>
+      <div class="field"><label for="email">Пошта</label><input class="input" id="email" type="email" autocomplete="username" required></div>
+      <div class="field" style="margin-top:12px"><label for="password">Пароль</label><input class="input" id="password" type="password" autocomplete="current-password" required></div>
+      <p class="err-text" id="loginErr" hidden></p>
+      <button class="btn primary block" style="margin-top:16px" type="submit">Увійти</button>
+    </form>
+  </section>
+
+  <!-- Панель -->
+  <section id="adminView" hidden>
+    <div class="admin-bar">
+      <button class="btn primary" id="newLotBtn" type="button">+ Новий лот</button>
+      <div class="row" style="align-items:center">
+        <span class="hint" id="whoami"></span>
+        <button class="btn small" id="logoutBtn" type="button">Вийти</button>
+      </div>
+    </div>
+
+    <form class="box" id="lotForm" hidden>
+      <h2 id="lotFormTitle">Новий лот</h2>
+      <div class="field"><label for="fTitle">Назва</label><input class="input" id="fTitle" maxlength="120" required></div>
+      <div class="field" style="margin-top:12px"><label for="fDesc">Опис</label><textarea class="input" id="fDesc" maxlength="5000"></textarea></div>
+
+      <div class="field" style="margin-top:12px">
+        <label>Фото (до 6 шт., перше — обкладинка)</label>
+        <div class="photos" id="fPhotos"></div>
+        <label class="btn small" style="width:max-content">
+          Додати фото<input type="file" id="fFiles" accept="image/*" multiple hidden>
+        </label>
+        <span class="hint">Фото автоматично зменшуються. Натисніть на фото, щоб зробити його обкладинкою.</span>
+      </div>
+
+      <div class="form-grid" style="margin-top:12px">
+        <div class="field"><label for="fStart">Стартова ціна, ₴</label><input class="input" id="fStart" type="number" min="0" step="1" required></div>
+        <div class="field"><label for="fMin">Мінімальний крок, ₴</label><input class="input" id="fMin" type="number" min="1" step="1" required></div>
+        <div class="field"><label for="fMax">Макс. підвищення за раз, ₴</label><input class="input" id="fMax" type="number" min="1" step="1" required></div>
+        <div class="field"><label for="fEnds">Завершення</label><input class="input" id="fEnds" type="datetime-local" required></div>
+        <div class="field"><label for="fSnipe">Подовження, хв</label><input class="input" id="fSnipe" type="number" min="0" max="30" step="1"></div>
+      </div>
+      <p class="hint">Макс. підвищення не дає одним кліком підняти ціну в рази. «Подовження»: якщо ставку зроблено в останні N хвилин, лот подовжується до N хвилин від цієї ставки (0 — вимкнено). Час завершення — за годинником вашого пристрою.</p>
+      <label class="check" style="margin-top:8px"><input type="checkbox" id="fHidden"><span>Приховати лот від учасників (чернетка)</span></label>
+      <p class="err-text" id="lotErr" hidden></p>
+      <div class="actions-row" style="margin-top:16px">
+        <button class="btn primary" type="submit" id="saveLot">Зберегти</button>
+        <button class="btn" type="button" id="cancelLot">Скасувати</button>
+      </div>
+    </form>
+
+    <div class="box">
+      <h2>Лоти</h2>
+      <div id="lotsList"></div>
+    </div>
+
+    <div class="box">
+      <h2>Підсумки</h2>
+      <div id="results"></div>
+    </div>
+
+    <div class="box">
+      <h2>Учасники</h2>
+      <p class="hint" style="margin-top:-6px">Позначка «той самий номер» означає, що з цим телефоном зареєстровано кілька учасників — так можна помітити накручування.</p>
+      <div class="scroll" id="bidders"></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Аукціон</title>
+<meta name="description" content="Онлайн-аукціон: лоти з фото та описом, ставки в реальному часі, таймер до завершення.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#FFD400">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <span class="brand"><span class="brand-dot"></span><span id="brand"></span></span>
+    <h1 id="title">Аукціон</h1>
+    <p class="lead" id="subtitle"></p>
+  </header>
+
+  <div id="notice" class="notice" hidden></div>
+
+  <!-- Список лотів -->
+  <section id="listView">
+    <details class="rules">
+      <summary>Як працює аукціон</summary>
+      <ol id="rulesList"></ol>
+    </details>
+    <div class="grid" id="grid" aria-live="polite"></div>
+  </section>
+
+  <!-- Сторінка лота -->
+  <section id="lotView" hidden>
+    <button class="back" id="backBtn" type="button">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      Усі лоти
+    </button>
+    <div class="lot">
+      <div class="gallery">
+        <div class="main" id="galleryMain"></div>
+        <div class="thumbs" id="galleryThumbs"></div>
+      </div>
+      <aside class="panel" id="panel"></aside>
+      <div class="desc" id="lotDesc"></div>
+    </div>
+  </section>
+
+  <footer id="footer"></footer>
+</main>
+
+<!-- Реєстрація учасника -->
+<dialog id="regDlg">
+  <form class="dlg" id="regForm" novalidate>
+    <h2>Участь в аукціоні</h2>
+    <p class="hint" style="margin:0">Ці дані бачить лише організатор. Іншим учасникам показується ім'я та дві останні цифри телефону.</p>
+    <div class="field">
+      <label for="regName">Ім'я та прізвище</label>
+      <input class="input" id="regName" autocomplete="name" maxlength="60" required>
+    </div>
+    <div class="field">
+      <label for="regPhone">Номер телефону</label>
+      <input class="input" id="regPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+380 __ ___ __ __" required>
+    </div>
+    <label class="check"><input type="checkbox" id="regAgree" required>
+      <span>Розумію, що кожна ставка — це зобов'язання купити лот за цією ціною, якщо вона виявиться найвищою. Ставку не можна скасувати.</span></label>
+    <p class="err-text" id="regErr" hidden></p>
+    <div class="actions">
+      <button class="btn" type="button" data-close>Скасувати</button>
+      <button class="btn primary" type="submit" id="regSubmit">Зареєструватись</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Підтвердження ставки -->
+<dialog id="bidDlg">
+  <form class="dlg" method="dialog" id="bidForm">
+    <h2>Підтвердіть ставку</h2>
+    <div><span class="k" id="bidLotName"></span><div class="big" id="bidAmount"></div></div>
+    <p class="hint" style="margin:0">Якщо ця ставка буде найвищою на момент завершення таймера, ви зобов'язуєтесь викупити лот за цією ціною.</p>
+    <div class="actions">
+      <button class="btn" value="cancel" type="submit">Скасувати</button>
+      <button class="btn primary" value="ok" type="submit">Так, ставлю</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="module" src="public.js"></script>
+</body>
+</html>
