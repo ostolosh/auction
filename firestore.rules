@@ -11,7 +11,7 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null
         && request.auth.token.firebase.sign_in_provider == 'password'
-        && request.auth.token.email in ['admin@example.com'];
+        && request.auth.token.email in ['ostolosh@gmail.com'];
     }
 
     // Пауза між ставками одного учасника, секунди (має збігатися з config.js → bidCooldownSec)

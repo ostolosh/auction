@@ -4,17 +4,17 @@
 export const CONFIG = {
   // 1) Вставте сюди налаштування з Firebase Console → Project settings → Your apps → Web app.
   //    Поки тут порожньо, сайт показує повідомлення «Аукціон ще не налаштовано».
-const firebaseConfig = {
-  apiKey: "AIzaSyDAdovrquPpYRHXLE1jlSGQt1YDyRMf39M",
-  authDomain: "ostauction.firebaseapp.com",
-  projectId: "ostauction",
-  storageBucket: "ostauction.firebasestorage.app",
-  messagingSenderId: "188801239244",
-  appId: "1:188801239244:web:c128d191e2d91866121a69"
-};
+  firebase: {
+    apiKey: "AIzaSyDAdovrquPpYRHXLE1jlSGQt1YDyRMf39M",
+    authDomain: "ostauction.firebaseapp.com",
+    projectId: "ostauction",
+    storageBucket: "ostauction.firebasestorage.app",
+    messagingSenderId: "188801239244",
+    appId: "1:188801239244:web:c128d191e2d91866121a69",
+  },
 
   // 2) Пошта адміністратора (та сама, що у firestore.rules). Під нею ви входите на admin.html.
-  adminEmails: ["ostolosh@gmail.com "],
+  adminEmails: ["ostolosh@gmail.com"],
 
   // Хто проводить аукціон (показується над заголовком). Можна залишити порожнім.
   brand: "",

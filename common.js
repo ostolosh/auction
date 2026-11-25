@@ -1,7 +1,8 @@
 // Спільні частини для сторінки аукціону та адмін-панелі.
 import { CONFIG } from "./config.js";
 
-const FB = "https://www.gstatic.com/firebasejs/13.4.0/";
+// Якщо потрібна версія недоступна, пробуємо запасну
+const FB_VERSIONS = ["13.4.0", "10.12.2"];
 
 export const configured = Boolean(CONFIG.firebase.apiKey && CONFIG.firebase.projectId);
 
@@ -9,11 +10,16 @@ export let fb = null; // { app, auth, db, fs: firestore module, au: auth module 
 
 export async function initFirebase() {
   if (!configured) return null;
-  const [appMod, au, fs] = await Promise.all([
-    import(FB + "firebase-app.js"),
-    import(FB + "firebase-auth.js"),
-    import(FB + "firebase-firestore.js"),
-  ]);
+  let mods, lastErr;
+  for (const v of FB_VERSIONS) {
+    const base = `https://www.gstatic.com/firebasejs/${v}/`;
+    try {
+      mods = await Promise.all(["app", "auth", "firestore"].map((m) => import(`${base}firebase-${m}.js`)));
+      break;
+    } catch (e) { lastErr = e; }
+  }
+  if (!mods) throw lastErr;
+  const [appMod, au, fs] = mods;
   const app = appMod.initializeApp(CONFIG.firebase);
   const auth = au.getAuth(app);
   const db = fs.getFirestore(app);

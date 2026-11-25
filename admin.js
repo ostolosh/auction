@@ -20,7 +20,7 @@ const S = {
 function notice(html, err = false) { const n = $("#notice"); n.innerHTML = html; n.classList.toggle("err", err); n.hidden = !html; }
 let tt;
 function toast(m) { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => (t.hidden = true), 4000); }
-const isAdminEmail = (email) => CONFIG.adminEmails.map((e) => e.toLowerCase()).includes(String(email || "").toLowerCase());
+const isAdminEmail = (email) => CONFIG.adminEmails.map((e) => e.trim().toLowerCase()).includes(String(email || "").toLowerCase());
 
 // ---------- Вхід ----------
 $("#loginForm").addEventListener("submit", async (e) => {
@@ -371,8 +371,14 @@ $("#lotForm").addEventListener("submit", async (e) => {
 // ---------- Старт ----------
 (async () => {
   if (!configured) { notice("Спершу заповніть <code>auction/config.js</code> — див. <code>auction/README.md</code>.", true); return; }
-  await syncClock();
-  S.fb = await initFirebase();
+  try {
+    await syncClock();
+    S.fb = await initFirebase();
+  } catch (e) {
+    console.error(e);
+    notice("Не вдалося підключитись до Firebase. Перевірте налаштування в <code>config.js</code> і оновіть сторінку.", true);
+    return;
+  }
   const { au, auth } = S.fb;
   au.onAuthStateChanged(auth, (user) => {
     stopData();
